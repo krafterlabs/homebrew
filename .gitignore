@@ -1,0 +1,17 @@
+# Ignore macOS junk
+.DS_Store
+._*
+
+# Release artifacts
+*.tar.gz
+*.dmg
+*.zip
+
+# Secrets
+.env
+.env.*
+
+# Editor
+.idea/
+.vscode/
+*.swp
