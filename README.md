@@ -195,11 +195,30 @@ brew install project-x
 
 ## For Maintainers
 
-See [docs/PROJECT_REPO_INTEGRATION.md](docs/PROJECT_REPO_INTEGRATION.md) for:
+See [docs/PROJECT_REPO_INTEGRATION.md](docs/PROJECT_REPO_INTEGRATION.md) for registering projects, release automation, and the full integration guide.
 
-- Registering new projects in `config/projects.yaml`
-- Automating formula updates on release via GitHub Actions
-- Script reference (`scripts/update-formula.sh`, `scripts/compute-sha256.sh`)
+### Formula quality checklist
+
+Before merging or releasing a formula change, confirm:
+
+- [ ] `desc` is strictly under 80 characters
+- [ ] `license` is set (e.g. `MIT` or `LicenseRef-Proprietary`)
+- [ ] Each platform has explicit `url` and `sha256` (no checksum-less downloads)
+- [ ] Pre-built binary formulas include `bottle :unneeded`
+- [ ] Runtime and build-time `depends_on` stanzas are separate (if any)
+- [ ] No deprecated Homebrew DSL (`option`, legacy install patterns)
+- [ ] `test` block runs a simple smoke test (`--version` or `--help`)
+- [ ] `./scripts/audit-formula.sh` passes (or CI audit step is green)
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/fetch-release-metadata.sh` | Fetch release assets and sha256 flags from GitHub |
+| `scripts/update-formula.sh` | Update `Formula/<project>.rb` with a new version |
+| `scripts/compute-sha256.sh` | Compute sha256 for a single release asset |
+| `scripts/generate-formula.sh` | Bootstrap a new formula from the template |
+| `scripts/audit-formula.sh` | Validate desc lengths and run `brew audit` |
 
 ---
 

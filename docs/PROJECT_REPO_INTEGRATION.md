@@ -98,6 +98,51 @@ export HOMEBREW_GITHUB_API_TOKEN="ghp_..."
 
 Or trigger **Actions → Update Tap Formula → Run workflow** in the GitHub UI.
 
+### Fetch release metadata (recommended)
+
+`fetch-release-metadata.sh` queries the GitHub Releases API, resolves platform asset names, and prints checksum flags ready for `update-formula.sh`:
+
+```bash
+export HOMEBREW_GITHUB_API_TOKEN="ghp_..."
+
+mapfile -t META < <(./scripts/fetch-release-metadata.sh my-org project-x v1.2.3)
+./scripts/update-formula.sh project-x "${META[0]}" "${META[@]:1}"
+```
+
+Custom asset naming (must match `asset_pattern` in `config/projects.yaml`):
+
+```bash
+./scripts/fetch-release-metadata.sh my-org project-x v1.2.3 \
+  'project-x-{{ .Version }}-{{ .OS }}-{{ .Arch }}.tar.gz'
+```
+
+Progress and asset URLs go to stderr; stdout is pipe-friendly (version on line 1, then `--sha256-<platform> <hash>` pairs).
+
+## Formula Quality (homebrew-package-writer)
+
+Formulas in this tap follow [Homebrew audit standards](https://docs.brew.sh/Formula-Cookbook). Use `templates/formula.rb.template` as the starting point.
+
+| Rule | Requirement |
+|------|-------------|
+| `desc` | Strictly under 80 characters |
+| `license` | Required (`MIT`, `Apache-2.0`, or `LicenseRef-Proprietary` for internal tools) |
+| Checksums | Explicit `url` + `sha256` per platform — no `head "..."` without a hash |
+| Pre-built binaries | `bottle :unneeded` |
+| Dependencies | Runtime `depends_on "foo"` vs build-time `depends_on "go" => :build` — keep separate |
+| DSL | Modern Homebrew only — no deprecated `option`, no legacy install patterns |
+| `test` | Simple smoke test (`--version` or `--help` fallback) |
+| `version` | Keep explicit for private taps (automation scripts depend on it) |
+
+After generating or updating a formula, validate locally:
+
+```bash
+./scripts/audit-formula.sh
+```
+
+This script checks `desc` lengths across `Formula/*.rb` and runs `brew audit --strict --new-formula` when Homebrew is installed. If `brew` is not available, desc validation still runs and brew audit is skipped.
+
+The **Update Tap Formula** workflow includes an optional audit step after formula updates (`continue-on-error: true`). Audit failures are reported but do not block commits.
+
 ## Go / Node Build Recommendations
 
 ### Go

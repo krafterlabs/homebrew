@@ -157,6 +157,12 @@ jobs:
           chmod +x ./scripts/*.sh
           "${ARGS[@]}"
 
+      - name: Audit formula (optional)
+        continue-on-error: true
+        run: |
+          chmod +x ./scripts/audit-formula.sh
+          ./scripts/audit-formula.sh
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
