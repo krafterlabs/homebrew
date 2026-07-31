@@ -1,14 +1,9 @@
-# krafterlabs/homebrew
+# krafterlabs/homebrew-tap
 
 Homebrew tap for krafterlabs tools.
 
-> Homebrew turns `brew tap krafterlabs/NAME` into a clone of
-> `github.com/krafterlabs/homebrew-NAME`. This repo is named `homebrew`, so pass
-> the clone URL explicitly (or rename the repo to `homebrew-tap` and use
-> `brew tap krafterlabs/tap`).
-
 ```bash
-brew tap krafterlabs/homebrew https://github.com/krafterlabs/homebrew
+brew tap krafterlabs/tap
 brew install --cask 0x-excali   # macOS
 brew install ox-excali          # Linux amd64
 ```
@@ -87,19 +82,11 @@ shasum -a 256 /tmp/tgz
 
 ## Troubleshooting
 
-**`homebrew-homebrew` / Repository not found** — you tapped without the URL:
+**Old tap name / Repository not found** — if you previously tapped `krafterlabs/homebrew`:
 
 ```bash
 brew untap krafterlabs/homebrew 2>/dev/null || true
-brew tap krafterlabs/homebrew https://github.com/krafterlabs/homebrew
+brew tap krafterlabs/tap
 ```
 
 **`SHA256 mismatch`** — tap not updated for the latest upstream release yet (see [How releases work](#how-releases-work)).
-
-## Optional: rename for the short tap command
-
-GitHub → **Settings → General → Repository name** → rename to `homebrew-tap`, then:
-
-```bash
-brew tap krafterlabs/tap
-```
