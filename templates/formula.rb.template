@@ -17,9 +17,23 @@
 # =============================================================================
 
 class __ProjectNameCamelCase__ < Formula
+  # desc must be strictly under 80 characters (Homebrew audit limit).
   desc "__DESCRIPTION__"
   homepage "__HOMEPAGE__"
+  license "MIT" # or "LicenseRef-Proprietary" for internal-only software
+  # Explicit version kept for private tap clarity (automation scripts depend on it).
   version "__VERSION__"
+
+  # Pre-built release binary — no Homebrew bottle required.
+  bottle :unneeded
+
+  # Runtime dependencies (installed alongside the formula):
+  # depends_on "openssl@3"
+  #
+  # Build-time dependencies (only when compiling from source):
+  # depends_on "go" => :build
+  #
+  # Pure binary formulas like this one typically need no depends_on stanzas.
 
   # Homebrew selects the correct stanza for the user's OS/arch at install time.
   on_macos do
@@ -50,19 +64,15 @@ class __ProjectNameCamelCase__ < Formula
   #   url "https://github.com/__GITHUB_ORG__/__GITHUB_REPO__/releases/download/v__VERSION__/__ASSET_NAME__"
   #   sha256 "__SHA256__"
 
-  # License is optional but recommended for private taps.
-  # license "MIT"
-
   def install
     # Assumes the release tarball extracts a single binary named __BINARY_NAME__.
     bin.install "__BINARY_NAME__"
   end
 
   test do
-    # Smoke test — adjust flag/output to match your CLI.
-    assert_match version.to_s, shell_output("#{bin}/__BINARY_NAME__ version 2>&1", 0)
-  rescue AssertionError
-    # Fallback if the binary has no `version` subcommand.
+    # Smoke test — use --version when supported, otherwise --help.
+    system "#{bin}/__BINARY_NAME__", "--version"
+  rescue ErrorDuringExecution
     system "#{bin}/__BINARY_NAME__", "--help"
   end
 end

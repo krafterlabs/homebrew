@@ -6,7 +6,10 @@
 class ExampleCli < Formula
   desc "Example CLI distributed via private GitHub releases"
   homepage "https://github.com/my-org/example-cli"
+  license "MIT"
   version "1.0.0"
+
+  bottle :unneeded
 
   on_macos do
     on_arm do
@@ -35,6 +38,8 @@ class ExampleCli < Formula
   end
 
   test do
+    system "#{bin}/example-cli", "--version"
+  rescue ErrorDuringExecution
     system "#{bin}/example-cli", "--help"
   end
 end
