@@ -4,25 +4,28 @@
 # (see .github/workflows/update-tap.yml and docs/PROJECT_REPO_INTEGRATION.md).
 #
 # Fields:
-#   name:        Formula name (lowercase, hyphens) — matches `brew install <name>`
+#   name:        Formula/Cask name — matches `brew install <name>` or `brew install --cask <name>`
 #   github_org:  GitHub organization or user that owns the private repo
 #   repo:        Repository name (without org prefix)
-#   description: Short description shown in `brew info`
+#   description: Short description shown in `brew info` (must be < 80 chars)
 #   homepage:    Project homepage or repo URL
-#   binary:      Name of the executable inside the release archive
-#   asset_pattern: Go template for the release asset filename. Variables:
-#                  {{ .Version }}  — version without leading "v"
-#                  {{ .OS }}       — "darwin" or "linux"
-#                  {{ .Arch }}     — "arm64" or "amd64"
+#   binary:      Name of the executable inside the release archive (Formula only)
+#   kind:        formula | cask | both
+#   cask_asset_pattern: macOS DMG filename template (for cask automation)
+#   formula_asset_pattern: Linux tarball filename template (for formula automation)
 #
-# Example entry:
-#
-#   - name: project-x
-#     github_org: my-org
-#     repo: project-x
-#     description: "CLI tool for doing X"
-#     homepage: https://github.com/my-org/project-x
-#     binary: project-x
-#     asset_pattern: "project-x-{{ .Version }}-{{ .OS }}-{{ .Arch }}.tar.gz"
+# Template variables:
+#   {{ .Version }}  — version without leading "v"
+#   {{ .OS }}       — "linux" (formula) or "macOS" (cask)
+#   {{ .Arch }}     — "amd64", "arm64", or "universal"
 
-projects: []
+projects:
+  - name: 0x-excali
+    github_org: krafterlabs
+    repo: 0x-excali
+    description: "Create, organize, and version your drawings with GitHub sync"
+    homepage: https://github.com/krafterlabs/0x-excali
+    binary: 0x-excali
+    kind: both
+    cask_asset_pattern: "0x-excali-production-macOS-universal-v{{ .Version }}.dmg"
+    formula_asset_pattern: "0x-excali-production-linux-amd64-v{{ .Version }}.tar.gz"

@@ -157,3 +157,29 @@ archives:
 ### Node
 
 Package standalone binaries with `pkg` or `nexe`, then upload platform-specific tarballs following the naming convention above.
+
+## Example: 0x-excali (Desktop App)
+
+[krafterlabs/0x-excali](https://github.com/krafterlabs/0x-excali) uses non-standard release asset names and ships both a macOS DMG and a Linux tarball:
+
+| Platform | Type | Asset |
+|----------|------|-------|
+| macOS | Cask | `0x-excali-production-macOS-universal-v1.0.4.dmg` |
+| Linux amd64 | Formula | `0x-excali-production-linux-amd64-v1.0.4.tar.gz` |
+
+**Install commands:**
+
+```bash
+brew install --cask 0x-excali   # macOS
+brew install 0x-excali          # Linux
+```
+
+**Manual version bump** after a new release — fetch checksums from the GitHub API digest field or:
+
+```bash
+./scripts/compute-sha256.sh krafterlabs 0x-excali v1.0.4 \
+  0x-excali-production-linux-amd64-v1.0.4.tar.gz
+
+# Update Formula/0x-excali.rb (linux) and Casks/0x-excali.rb (macOS dmg) with new
+# version, url, and sha256 values from the release page.
+```

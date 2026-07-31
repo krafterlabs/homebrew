@@ -1,10 +1,11 @@
-# my-org/homebrew-tools
+# krafterlabs/homebrew
 
-A private [Homebrew tap](https://docs.brew.sh/Taps) for installing internal CLI tools with one command.
+A private [Homebrew tap](https://docs.brew.sh/Taps) for installing internal tools with one command.
 
 ```bash
-brew tap my-org/tools
-brew install project-x
+brew tap krafterlabs/homebrew
+brew install --cask 0x-excali   # macOS desktop app
+brew install 0x-excali          # Linux CLI/desktop binary
 ```
 
 This repository distributes binaries from private GitHub releases. Because the tap and source repositories are private, you need a GitHub token before Homebrew can access them.
@@ -28,7 +29,7 @@ You need a token with **read access to private repositories**.
 #### Fine-grained PAT (alternative)
 
 1. Open **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens**
-2. Grant **Repository access** to `my-org/homebrew-tools` and any project repos you install from
+2. Grant **Repository access** to `krafterlabs/homebrew` and any project repos you install from
 3. Permissions: **Contents → Read-only**
 
 > Keep your token secret. Never commit it to a repo or share it in chat.
@@ -63,51 +64,62 @@ echo $HOMEBREW_GITHUB_API_TOKEN | head -c 10
 ### 3. Tap this repository
 
 ```bash
-brew tap my-org/tools https://github.com/my-org/homebrew-tools
+brew tap krafterlabs/homebrew https://github.com/krafterlabs/homebrew
 ```
 
 Shorthand (works once GitHub auth is configured):
 
 ```bash
-brew tap my-org/tools
+brew tap krafterlabs/homebrew
 ```
 
 ---
 
 ### 4. Install a tool
 
+**macOS desktop app (Cask):**
+
 ```bash
-brew install project-x
+brew install --cask 0x-excali
+```
+
+**Linux binary (Formula):**
+
+```bash
+brew install 0x-excali
 ```
 
 List everything available in this tap:
 
 ```bash
-brew search my-org/tools/
+brew search krafterlabs/homebrew/
 ```
 
-Get details about a formula:
+Get details:
 
 ```bash
-brew info project-x
+brew info --cask 0x-excali   # macOS
+brew info 0x-excali           # Linux
 ```
 
 Upgrade when new versions are released:
 
 ```bash
 brew update
-brew upgrade project-x
+brew upgrade --cask 0x-excali  # macOS
+brew upgrade 0x-excali         # Linux
 ```
 
 ---
 
 ## Available Tools
 
-| Formula | Description |
-|---------|-------------|
-| `example-cli` | Example CLI (scaffold placeholder — replace with your projects) |
+| Name | Type | Description |
+|------|------|-------------|
+| `0x-excali` | Cask (macOS) / Formula (Linux) | Desktop app for drawings with GitHub sync |
+| `example-cli` | Formula | Example CLI (scaffold placeholder) |
 
-> New tools appear here as formulas are added to the `Formula/` directory.
+> macOS GUI apps use `brew install --cask <name>`. Linux binaries use `brew install <name>`.
 
 ---
 
@@ -131,12 +143,12 @@ These errors almost always mean Homebrew cannot authenticate to the private tap 
 3. **Token has `repo` scope** (classic) or **Contents read** on the relevant repos (fine-grained).
 
 4. **You have access to the repositories**
-   - Ask your admin to grant you read access to `my-org/homebrew-tools` and the project repo.
+   - Ask your admin to grant you read access to `krafterlabs/homebrew` and the project repo.
 
 5. **Re-tap after fixing auth**
    ```bash
-   brew untap my-org/tools
-   brew tap my-org/tools
+   brew untap krafterlabs/homebrew
+   brew tap krafterlabs/homebrew
    ```
 
 ---
@@ -160,9 +172,9 @@ brew fetch --force project-x && brew install project-x
 The formula may not exist yet, or you may have tapped the wrong org.
 
 ```bash
-brew untap my-org/tools
-brew tap my-org/tools
-brew search my-org/tools/
+brew untap krafterlabs/homebrew
+brew tap krafterlabs/homebrew
+brew search krafterlabs/homebrew/
 ```
 
 ---
@@ -187,9 +199,9 @@ brew install project-x
 2. Confirm you can reach the API:
    ```bash
    curl -s -H "Authorization: Bearer $HOMEBREW_GITHUB_API_TOKEN" \
-     https://api.github.com/repos/my-org/homebrew-tools | jq .name
+     https://api.github.com/repos/krafterlabs/homebrew | jq .name
    ```
-   Expected: `"homebrew-tools"`. If you see `"Not Found"`, fix token/access first.
+   Expected: `"homebrew"`. If you see `"Not Found"`, fix token/access first.
 
 ---
 
