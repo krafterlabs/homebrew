@@ -57,6 +57,13 @@ usage() {
 log() { printf '[update-formula] %s\n' "$*" >&2; }
 die() { log "ERROR: $*"; exit 1; }
 
+validate_desc_length() {
+  local desc="$1"
+  if ((${#desc} > 79)); then
+    die "desc is ${#desc} characters (max 79): ${desc}"
+  fi
+}
+
 # Strip leading "v" from version tags.
 normalize_version() {
   echo "${1#v}"
@@ -207,6 +214,7 @@ generate_formula() {
   ruby_class="$(to_ruby_class "$PROJECT_NAME")"
   local desc homepage
   desc="$(lookup_config "$PROJECT_NAME" description || echo "Private CLI tool")"
+  validate_desc_length "$desc"
   homepage="$(lookup_config "$PROJECT_NAME" homepage || echo "https://github.com/${GITHUB_ORG}/${GITHUB_REPO}")"
 
   if $DRY_RUN; then
@@ -220,7 +228,10 @@ generate_formula() {
 class ${ruby_class} < Formula
   desc "${desc}"
   homepage "${homepage}"
+  license "MIT"
   version "${NEW_VERSION}"
+
+  bottle :unneeded
 
   on_macos do
     on_arm do
@@ -291,6 +302,10 @@ main() {
   fi
 
   commit_changes
+
+  if ! $DRY_RUN; then
+    log "Reminder: run ./scripts/audit-formula.sh to validate formulas."
+  fi
 }
 
 main "$@"

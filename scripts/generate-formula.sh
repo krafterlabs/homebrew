@@ -54,6 +54,10 @@ GITHUB_REPO="$(lookup repo)"
 GITHUB_REPO="${GITHUB_REPO:-$PROJECT_NAME}"
 DESCRIPTION="$(lookup description)"
 DESCRIPTION="${DESCRIPTION:-Private CLI tool}"
+if [[ ${#DESCRIPTION} -gt 79 ]]; then
+  echo "ERROR: desc is ${#DESCRIPTION} characters (max 79): ${DESCRIPTION}" >&2
+  exit 1
+fi
 HOMEPAGE="$(lookup homepage)"
 HOMEPAGE="${HOMEPAGE:-https://github.com/${GITHUB_ORG}/${GITHUB_REPO}}"
 BINARY="$(lookup binary)"
@@ -92,3 +96,4 @@ sed \
 
 echo "Created ${OUTPUT}"
 echo "Next: run update-formula.sh after publishing release assets with real checksums."
+echo "Reminder: run ./scripts/audit-formula.sh to validate formulas."
