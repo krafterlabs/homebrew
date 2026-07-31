@@ -1,25 +1,37 @@
 # krafterlabs/homebrew
 
-Private Homebrew tap for krafterlabs tools.
+Private-or-public Homebrew tap for krafterlabs tools.
+
+> **Important:** Homebrew turns `brew tap krafterlabs/NAME` into a clone of
+> `github.com/krafterlabs/homebrew-NAME`. This repo is named `homebrew`, so you
+> must pass the clone URL explicitly (or rename the repo to `homebrew-tap` and
+> use `brew tap krafterlabs/tap`).
 
 ```bash
-export HOMEBREW_GITHUB_API_TOKEN="ghp_..."   # PAT with repo read (tap is private)
-brew tap krafterlabs/homebrew
-brew install --cask 0x-excali                 # macOS
-brew install ox-excali                        # Linux amd64
+# Tap (URL required until the GitHub repo is renamed to homebrew-tap)
+brew tap krafterlabs/homebrew https://github.com/krafterlabs/homebrew
+
+# Install
+brew install --cask 0x-excali   # macOS
+brew install ox-excali          # Linux amd64
 ```
 
-## Token setup
+## Optional: rename for the short tap command
 
-1. GitHub → Settings → Developer settings → [Personal access tokens](https://github.com/settings/tokens)
-2. Classic PAT with **`repo`** scope (or fine-grained: Contents read on `krafterlabs/homebrew`)
-3. Add to `~/.zshrc` / `~/.bashrc`:
+On GitHub → **Settings → General → Repository name**, rename to `homebrew-tap`.
+Then users can run:
 
 ```bash
-export HOMEBREW_GITHUB_API_TOKEN="ghp_your_token_here"
+brew tap krafterlabs/tap
 ```
 
-Homebrew does **not** use your `git` credentials — only this env var.
+## Token (only if the tap is private)
+
+```bash
+export HOMEBREW_GITHUB_API_TOKEN="ghp_..."   # classic PAT with repo read
+```
+
+This repo is **public** — a token is not required to tap or install.
 
 ## Available packages
 
@@ -30,13 +42,11 @@ Homebrew does **not** use your `git` credentials — only this env var.
 
 ## Troubleshooting
 
-**`Repository not found` / `404`** — token missing, expired, or lacking access:
+**`homebrew-homebrew` / Repository not found** — you ran `brew tap krafterlabs/homebrew` without the URL. Use:
 
 ```bash
-echo $HOMEBREW_GITHUB_API_TOKEN
-brew untap krafterlabs/homebrew && brew tap krafterlabs/homebrew
-curl -s -H "Authorization: Bearer $HOMEBREW_GITHUB_API_TOKEN" \
-  https://api.github.com/repos/krafterlabs/homebrew | jq .name
+brew untap krafterlabs/homebrew 2>/dev/null || true
+brew tap krafterlabs/homebrew https://github.com/krafterlabs/homebrew
 ```
 
 **`SHA256 mismatch`** — tap not updated for the latest release; ping maintainers.
