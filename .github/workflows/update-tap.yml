@@ -1,0 +1,170 @@
+# Triggered by project repos on release, or manually from the Actions tab.
+#
+# Project repos should add a workflow that calls repository_dispatch on this repo:
+#   curl -X POST \
+#     -H "Authorization: Bearer ${{ secrets.TAP_UPDATE_TOKEN }}" \
+#     -H "Accept: application/vnd.github+json" \
+#     https://api.github.com/repos/my-org/homebrew-tools/dispatches \
+#     -d '{"event_type":"release-published","client_payload":{...}}'
+
+name: Update Tap Formula
+
+on:
+  repository_dispatch:
+    types: [release-published]
+
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: "Formula name (e.g. project-x)"
+        required: true
+        type: string
+      new_version:
+        description: "Release version (e.g. 1.2.3 or v1.2.3)"
+        required: true
+        type: string
+      sha256_darwin_arm64:
+        description: "SHA256 for darwin-arm64 asset (optional)"
+        required: false
+        type: string
+      sha256_darwin_amd64:
+        description: "SHA256 for darwin-amd64 asset (optional)"
+        required: false
+        type: string
+      sha256_linux_arm64:
+        description: "SHA256 for linux-arm64 asset (optional)"
+        required: false
+        type: string
+      sha256_linux_amd64:
+        description: "SHA256 for linux-amd64 asset (optional)"
+        required: false
+        type: string
+      sha256:
+        description: "Single SHA256 for universal/single-platform builds (optional)"
+        required: false
+        type: string
+      github_org:
+        description: "GitHub org override (default: my-org)"
+        required: false
+        type: string
+        default: "my-org"
+      github_repo:
+        description: "GitHub repo override (default: project_name)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TAP_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Resolve inputs
+        id: vars
+        env:
+          PAYLOAD: ${{ toJson(github.event.client_payload) }}
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            echo "project_name=$(echo "$PAYLOAD" | jq -r '.project_name')" >> "$GITHUB_OUTPUT"
+            echo "new_version=$(echo "$PAYLOAD" | jq -r '.version')" >> "$GITHUB_OUTPUT"
+            echo "sha256_darwin_arm64=$(echo "$PAYLOAD" | jq -r '.sha256_darwin_arm64 // empty')" >> "$GITHUB_OUTPUT"
+            echo "sha256_darwin_amd64=$(echo "$PAYLOAD" | jq -r '.sha256_darwin_amd64 // empty')" >> "$GITHUB_OUTPUT"
+            echo "sha256_linux_arm64=$(echo "$PAYLOAD" | jq -r '.sha256_linux_arm64 // empty')" >> "$GITHUB_OUTPUT"
+            echo "sha256_linux_amd64=$(echo "$PAYLOAD" | jq -r '.sha256_linux_amd64 // empty')" >> "$GITHUB_OUTPUT"
+            echo "sha256=$(echo "$PAYLOAD" | jq -r '.sha256 // empty')" >> "$GITHUB_OUTPUT"
+            echo "github_org=$(echo "$PAYLOAD" | jq -r '.github_org // "my-org"')" >> "$GITHUB_OUTPUT"
+            echo "github_repo=$(echo "$PAYLOAD" | jq -r '.github_repo // .project_name')" >> "$GITHUB_OUTPUT"
+          else
+            echo "project_name=${{ inputs.project_name }}" >> "$GITHUB_OUTPUT"
+            echo "new_version=${{ inputs.new_version }}" >> "$GITHUB_OUTPUT"
+            echo "sha256_darwin_arm64=${{ inputs.sha256_darwin_arm64 }}" >> "$GITHUB_OUTPUT"
+            echo "sha256_darwin_amd64=${{ inputs.sha256_darwin_amd64 }}" >> "$GITHUB_OUTPUT"
+            echo "sha256_linux_arm64=${{ inputs.sha256_linux_arm64 }}" >> "$GITHUB_OUTPUT"
+            echo "sha256_linux_amd64=${{ inputs.sha256_linux_amd64 }}" >> "$GITHUB_OUTPUT"
+            echo "sha256=${{ inputs.sha256 }}" >> "$GITHUB_OUTPUT"
+            echo "github_org=${{ inputs.github_org }}" >> "$GITHUB_OUTPUT"
+            echo "github_repo=${{ inputs.github_repo || inputs.project_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute missing checksums from release assets
+        id: checksums
+        if: >-
+          steps.vars.outputs.sha256 == '' &&
+          (steps.vars.outputs.sha256_darwin_arm64 == '' ||
+           steps.vars.outputs.sha256_darwin_amd64 == '' ||
+           steps.vars.outputs.sha256_linux_arm64 == '' ||
+           steps.vars.outputs.sha256_linux_amd64 == '')
+        env:
+          GITHUB_TOKEN: ${{ secrets.TAP_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+          PROJECT: ${{ steps.vars.outputs.project_name }}
+          VERSION: ${{ steps.vars.outputs.new_version }}
+          ORG: ${{ steps.vars.outputs.github_org }}
+          REPO: ${{ steps.vars.outputs.github_repo }}
+        run: |
+          set -euo pipefail
+          VER="${VERSION#v}"
+          TAG="v${VER}"
+          compute() {
+            local os="$1" arch="$2"
+            local asset="${PROJECT}-${VER}-${os}-${arch}.tar.gz"
+            ./scripts/compute-sha256.sh "$ORG" "$REPO" "$TAG" "$asset"
+          }
+          {
+            echo "darwin_arm64=$(compute darwin arm64)"
+            echo "darwin_amd64=$(compute darwin amd64)"
+            echo "linux_arm64=$(compute linux arm64)"
+            echo "linux_amd64=$(compute linux amd64)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update formula
+        env:
+          PROJECT: ${{ steps.vars.outputs.project_name }}
+          VERSION: ${{ steps.vars.outputs.new_version }}
+          ORG: ${{ steps.vars.outputs.github_org }}
+          REPO: ${{ steps.vars.outputs.github_repo }}
+          SHA256: ${{ steps.vars.outputs.sha256 }}
+          SHA256_DARWIN_ARM64: ${{ steps.vars.outputs.sha256_darwin_arm64 }}
+          SHA256_DARWIN_AMD64: ${{ steps.vars.outputs.sha256_darwin_amd64 }}
+          SHA256_LINUX_ARM64: ${{ steps.vars.outputs.sha256_linux_arm64 }}
+          SHA256_LINUX_AMD64: ${{ steps.vars.outputs.sha256_linux_amd64 }}
+          COMPUTED_DARWIN_ARM64: ${{ steps.checksums.outputs.darwin_arm64 }}
+          COMPUTED_DARWIN_AMD64: ${{ steps.checksums.outputs.darwin_amd64 }}
+          COMPUTED_LINUX_ARM64: ${{ steps.checksums.outputs.linux_arm64 }}
+          COMPUTED_LINUX_AMD64: ${{ steps.checksums.outputs.linux_amd64 }}
+        run: |
+          set -euo pipefail
+          ARGS=("./scripts/update-formula.sh" "$PROJECT" "$VERSION" "--github-org" "$ORG" "--github-repo" "$REPO" "--no-commit")
+
+          add_sha() {
+            local flag="$1" value="$2"
+            if [[ -n "$value" ]]; then
+              ARGS+=("$flag" "$value")
+            fi
+          }
+
+          add_sha "--sha256" "$SHA256"
+          add_sha "--sha256-darwin-arm64" "${SHA256_DARWIN_ARM64:-$COMPUTED_DARWIN_ARM64}"
+          add_sha "--sha256-darwin-amd64" "${SHA256_DARWIN_AMD64:-$COMPUTED_DARWIN_AMD64}"
+          add_sha "--sha256-linux-arm64" "${SHA256_LINUX_ARM64:-$COMPUTED_LINUX_ARM64}"
+          add_sha "--sha256-linux-amd64" "${SHA256_LINUX_AMD64:-$COMPUTED_LINUX_AMD64}"
+
+          chmod +x ./scripts/*.sh
+          "${ARGS[@]}"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "Formula/${{ steps.vars.outputs.project_name }}.rb"
+          if git diff --cached --quiet; then
+            echo "No formula changes to push"
+            exit 0
+          fi
+          git commit -m "chore(formula): bump ${{ steps.vars.outputs.project_name }} to v${{ steps.vars.outputs.new_version }}"
+          git push

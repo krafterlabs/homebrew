@@ -1,0 +1,68 @@
+# frozen_string_literal: true
+
+# =============================================================================
+# Homebrew Formula Template — Private GitHub Release Binary
+# =============================================================================
+#
+# Copy this file to Formula/<project-name>.rb and replace every __PLACEHOLDER__.
+#
+# Prerequisites for end-users:
+#   export HOMEBREW_GITHUB_API_TOKEN="<PAT with repo scope>"
+#
+# Release asset naming convention (recommended for multi-platform support):
+#   <project-name>-<version>-<os>-<arch>.tar.gz
+#   e.g. project-x-1.2.3-darwin-arm64.tar.gz
+#
+# The archive should contain the binary at the top level (or adjust `install`).
+# =============================================================================
+
+class __ProjectNameCamelCase__ < Formula
+  desc "__DESCRIPTION__"
+  homepage "__HOMEPAGE__"
+  version "__VERSION__"
+
+  # Homebrew selects the correct stanza for the user's OS/arch at install time.
+  on_macos do
+    on_arm do
+      url "https://github.com/__GITHUB_ORG__/__GITHUB_REPO__/releases/download/v__VERSION__/__ASSET_NAME_DARWIN_ARM64__"
+      sha256 "__SHA256_DARWIN_ARM64__"
+    end
+    on_intel do
+      url "https://github.com/__GITHUB_ORG__/__GITHUB_REPO__/releases/download/v__VERSION__/__ASSET_NAME_DARWIN_AMD64__"
+      sha256 "__SHA256_DARWIN_AMD64__"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/__GITHUB_ORG__/__GITHUB_REPO__/releases/download/v__VERSION__/__ASSET_NAME_LINUX_ARM64__"
+      sha256 "__SHA256_LINUX_ARM64__"
+    end
+    on_intel do
+      url "https://github.com/__GITHUB_ORG__/__GITHUB_REPO__/releases/download/v__VERSION__/__ASSET_NAME_LINUX_AMD64__"
+      sha256 "__SHA256_LINUX_AMD64__"
+    end
+  end
+
+  # If you only ship a single universal binary, replace the `on_*` blocks above
+  # with a single url/sha256 pair:
+  #
+  #   url "https://github.com/__GITHUB_ORG__/__GITHUB_REPO__/releases/download/v__VERSION__/__ASSET_NAME__"
+  #   sha256 "__SHA256__"
+
+  # License is optional but recommended for private taps.
+  # license "MIT"
+
+  def install
+    # Assumes the release tarball extracts a single binary named __BINARY_NAME__.
+    bin.install "__BINARY_NAME__"
+  end
+
+  test do
+    # Smoke test — adjust flag/output to match your CLI.
+    assert_match version.to_s, shell_output("#{bin}/__BINARY_NAME__ version 2>&1", 0)
+  rescue AssertionError
+    # Fallback if the binary has no `version` subcommand.
+    system "#{bin}/__BINARY_NAME__", "--help"
+  end
+end

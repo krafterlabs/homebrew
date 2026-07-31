@@ -1,0 +1,44 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# Downloaded release artifacts (used during formula development/testing)
+*.tar.gz
+*.tar.xz
+*.zip
+*.dmg
+*.pkg
+downloads/
+tmp/
+.tmp/
+
+# Ruby / Bundler (if you add local tooling)
+.bundle/
+vendor/bundle/
+Gemfile.lock
+.ruby-version
+
+# Editor and IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local secrets — never commit tokens
+.env
+.env.*
+*.pem
+secrets/
+
+# Script scratch space
+scripts/.cache/
+scripts/output/
+
+# Homebrew local test artifacts
+brew-test-*/

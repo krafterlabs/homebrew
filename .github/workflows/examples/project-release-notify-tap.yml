@@ -1,0 +1,80 @@
+# Example workflow for PROJECT repositories (not the tap).
+# Copy to: .github/workflows/notify-homebrew-tap.yml in each project repo.
+#
+# Required secrets in the project repo:
+#   TAP_UPDATE_TOKEN — PAT or fine-grained token with:
+#     - Contents: Read on the project repo
+#     - Contents: Write on my-org/homebrew-tools (to trigger dispatch + allow bot commits)
+
+name: Notify Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-tap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute release checksums
+        id: sha
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.release.tag_name }}"
+          VER="${VERSION#v}"
+          REPO="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          TAG="$VERSION"
+
+          compute() {
+            local os="$1" arch="$2"
+            local asset="${REPO}-${VER}-${os}-${arch}.tar.gz"
+            API="https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${TAG}"
+            ASSET_URL=$(curl -fsSL \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "$API" | jq -r --arg n "$asset" '.assets[] | select(.name==$n) | .url')
+            curl -fsSL \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/octet-stream" \
+              -L -o "/tmp/${asset}" "$ASSET_URL"
+            shasum -a 256 "/tmp/${asset}" | awk '{print $1}'
+          }
+
+          echo "darwin_arm64=$(compute darwin arm64)" >> "$GITHUB_OUTPUT"
+          echo "darwin_amd64=$(compute darwin amd64)" >> "$GITHUB_OUTPUT"
+          echo "linux_arm64=$(compute linux arm64)" >> "$GITHUB_OUTPUT"
+          echo "linux_amd64=$(compute linux amd64)" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch tap update
+        env:
+          TAP_UPDATE_TOKEN: ${{ secrets.TAP_UPDATE_TOKEN }}
+        run: |
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${TAP_UPDATE_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/my-org/homebrew-tools/dispatches \
+            -d "$(jq -n \
+              --arg project "${{ github.event.repository.name }}" \
+              --arg version "${{ github.event.release.tag_name }}" \
+              --arg org "${{ github.repository_owner }}" \
+              --arg repo "${{ github.event.repository.name }}" \
+              --arg darwin_arm64 "${{ steps.sha.outputs.darwin_arm64 }}" \
+              --arg darwin_amd64 "${{ steps.sha.outputs.darwin_amd64 }}" \
+              --arg linux_arm64 "${{ steps.sha.outputs.linux_arm64 }}" \
+              --arg linux_amd64 "${{ steps.sha.outputs.linux_amd64 }}" \
+              '{
+                event_type: "release-published",
+                client_payload: {
+                  project_name: $project,
+                  version: $version,
+                  github_org: $org,
+                  github_repo: $repo,
+                  sha256_darwin_arm64: $darwin_arm64,
+                  sha256_darwin_amd64: $darwin_amd64,
+                  sha256_linux_arm64: $linux_arm64,
+                  sha256_linux_amd64: $linux_amd64
+                }
+              }')"
